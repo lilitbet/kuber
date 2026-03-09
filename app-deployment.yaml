@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crudback-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: crudback
+  template:
+    metadata:
+      labels:
+        app: crudback
+    spec:
+      containers:
+      - name: crudback
+        image: lilitbet/crudback
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_HOST
+          value: "db"
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWORD
+          value: "root"
+        - name: DB_NAME
+          value: "notepaddb"
+      tolerations:                     
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 30
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 30
