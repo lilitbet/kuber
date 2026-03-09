@@ -27,7 +27,7 @@ SET time_zone = "+00:00";
 -- Структура таблицы `pages`
 --
 
-CREATE TABLE `pages` (
+CREATE TABLE IF NOT EXISTS `pages` (
   `id` int(11) NOT NULL,
   `userId` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE `pages` (
 -- Структура таблицы `users`
 --
 
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL,
   `Surname` varchar(255) DEFAULT NULL,
   `name` varchar(255) NOT NULL,
