@@ -134,13 +134,12 @@ pipeline {
             }
         }
 
-        stage('Verify Pages Table Schema') {
+        stage('Verify Pages structure') {
             steps {
                 container('tools') {
                     script {
                         echo "Проверка структуры таблицы pages..."
         
-                        // Выполняем DESCRIBE и извлекаем имена колонок
                         def describeOutput = sh(
                             script: """
                                 kubectl exec -n ${NAMESPACE} deployment/mysql -- mysql -u${DB_USER} -p${DB_PASS} -D ${DB_NAME} -e 'DESCRIBE pages;' 2>/dev/null | tail -n +2 | awk '{print \$1}'
@@ -152,19 +151,15 @@ pipeline {
                             error("Не удалось получить описание таблицы pages. Возможно, таблица не существует.")
                         }
         
-                        // Преобразуем вывод в список
                         def actualColumns = describeOutput.readLines().collect { it.trim() }
                         echo "Фактические колонки: ${actualColumns}"
         
-                        // Ожидаемые колонки из SQL дампа
                         def expectedColumns = ['id', 'userId', 'title', 'text_crop', 'text']
         
-                        // Проверка количества
                         if (actualColumns.size() != expectedColumns.size()) {
                             error("Неверное количество колонок. Ожидалось: ${expectedColumns.size()}, получено: ${actualColumns.size()}")
                         }
         
-                        // Проверка наличия всех ожидаемых и отсутствия лишних
                         def missingColumns = expectedColumns - actualColumns
                         def extraColumns = actualColumns - expectedColumns
         
