@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 INSERT INTO `users` (`id`, `Surname`, `name`, `login`, `password`) VALUES
-(1, 'Бетхем', 'Лилит', 'root', '1234');
+(1, 'Бетхемян', 'Лилит', 'root', '1234');
 
 --
 -- Индексы сохранённых таблиц
