@@ -122,6 +122,7 @@ pipeline {
                         // Проверяем наличие SQL файла в репозитории
                         if (fileExists("dump/${SQL_FILE}")) {
                             sh """
+                                kubectl exec -n ${NAMESPACE} deployment/mysql -- mysql -u${DB_USER} -p${DB_PASS} -e "TRUNCATE TABLE ${DB_NAME}.pages;TRUNCATE TABLE ${DB_NAME}.users;"
                                 kubectl exec -i -n ${NAMESPACE} deployment/mysql -- mysql -u${DB_USER} -p${DB_PASS} ${DB_NAME} < dump/${SQL_FILE}
                                 echo "SQL из ${SQL_FILE} загружен в MySQL"
                             """
