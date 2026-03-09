@@ -133,28 +133,51 @@ pipeline {
             }
         }
 
-        stage('Check pages structure') {
+        stage('Verify Pages Table Schema') {
             steps {
                 container('tools') {
-                    echo 'Проверка существования столбцов в таблице pages...'
                     script {
-                        def columnCheck = sh(
+                        echo "Проверка структуры таблицы pages..."
+        
+                        // Выполняем DESCRIBE и извлекаем имена колонок
+                        def describeOutput = sh(
                             script: """
-                                kubectl exec -n ${NAMESPACE} deployment/mysql -- mysql -u${DB_USER} -p${DB_PASS} -D ${DB_NAME} -N -e "
-                                SELECT COUNT(*) 
-                                FROM INFORMATION_SCHEMA.COLUMNS 
-                                WHERE TABLE_NAME='pages' AND COLUMN_NAME='name';
-                                " 2>/dev/null | tr -d '[:space:]'
+                                kubectl exec -n ${NAMESPACE} deployment/mysql -- mysql -u${DB_USER} -p${DB_PASS} -D ${DB_NAME} -e 'DESCRIBE pages;' 2>/dev/null | tail -n +2 | awk '{print \$1}'
                             """,
                             returnStdout: true
                         ).trim()
-
-                        if (columnCheck == "" || columnCheck == "0") {
-                            echo 'Ошибка: поле name отсутствует в таблице users!'
-                            error("Поле name отсутствует в таблице users!")
-                        } else {
-                            echo "Поле name присутствует в таблице users (найдено столбцов: ${columnCheck})"
+        
+                        if (!describeOutput) {
+                            error("Не удалось получить описание таблицы pages. Возможно, таблица не существует.")
                         }
+        
+                        // Преобразуем вывод в список
+                        def actualColumns = describeOutput.readLines().collect { it.trim() }
+                        echo "Фактические колонки: ${actualColumns}"
+        
+                        // Ожидаемые колонки из SQL дампа
+                        def expectedColumns = ['id', 'userId', 'title', 'text_crop', 'text']
+        
+                        // Проверка количества
+                        if (actualColumns.size() != expectedColumns.size()) {
+                            error("Неверное количество колонок. Ожидалось: ${expectedColumns.size()}, получено: ${actualColumns.size()}")
+                        }
+        
+                        // Проверка наличия всех ожидаемых и отсутствия лишних
+                        def missingColumns = expectedColumns - actualColumns
+                        def extraColumns = actualColumns - expectedColumns
+        
+                        if (missingColumns) {
+                            echo "Отсутствуют колонки: ${missingColumns}"
+                        }
+                        if (extraColumns) {
+                            echo "Лишние колонки: ${extraColumns}"
+                        }
+                        if (missingColumns || extraColumns) {
+                            error("Структура таблицы pages не соответствует ожидаемой")
+                        }
+        
+                        echo "Структура таблицы pages полностью соответствует."
                     }
                 }
             }
